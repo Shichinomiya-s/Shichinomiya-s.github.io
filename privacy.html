@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>プライバシーポリシー — SUUMO ハザードチェッカー</title>
+<meta name="robots" content="all">
+<style>
+  :root{
+    --paper:#f3efe6; --ink:#16242f; --ink-soft:#46545e; --line:#c9c0ad;
+    --flood:#2f6fb0; --accent:#1d4e6b; --radius:14px; --maxw:760px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Zen Kaku Gothic New",system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.85;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:48px 22px 80px;}
+  header{border-bottom:2px solid var(--accent);padding-bottom:16px;margin-bottom:28px;}
+  h1{font-size:26px;letter-spacing:.02em;}
+  .lead{color:var(--ink-soft);margin-top:8px;font-size:14px;}
+  h2{font-size:17px;color:var(--accent);margin:34px 0 10px;padding-left:10px;border-left:4px solid var(--flood);}
+  p,li{font-size:15px;color:var(--ink);}
+  ul{margin:8px 0 8px 22px;}
+  li{margin:4px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px;}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+  th{background:#ece6d8;}
+  a{color:var(--flood);}
+  .note{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:18px 0;font-size:14px;color:var(--ink-soft);}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>プライバシーポリシー</h1>
+  <p class="lead">SUUMO ハザードチェッカー（Chrome 拡張機能・非公式）／ 最終更新日: 2026年5月29日</p>
+</header>
+
+<p>本拡張機能（以下「本拡張」）は、不動産情報サイトの物件ページに表示された住所をもとに、公開されている災害リスク情報を表示するツールです。本ページでは、本拡張が扱う情報とその取り扱いについて説明します。</p>
+
+<div class="note">
+  本拡張は、利用者を個人として識別する情報を開発者が収集・保存・販売することは一切ありません。本拡張に開発者独自のサーバーやデータベースはありません。
+</div>
+
+<h2>1. 取得・処理する情報</h2>
+<table>
+  <tr><th>情報</th><th>取得元</th><th>用途</th></tr>
+  <tr><td>物件の住所・地名</td><td>表示中の物件ページ（ブラウザ内で読み取り）</td><td>緯度経度への変換とハザード判定</td></tr>
+  <tr><td>緯度・経度</td><td>住所から算出</td><td>標高・地盤・浸水/土砂/地震リスクの照会</td></tr>
+  <tr><td>メモ・お気に入り・設定</td><td>利用者の入力</td><td>端末内での保存・再表示</td></tr>
+</table>
+<p>これらは判定に必要な範囲でのみ処理され、判定結果・メモ・設定は<strong>お使いの端末内（Chrome のローカルストレージ）にのみ保存</strong>されます。開発者へ送信されることはありません。</p>
+
+<h2>2. 外部サービスへの送信</h2>
+<p>ハザード判定のため、住所・座標が以下の公開APIへ送信されます。各サービスの利用規約・プライバシーポリシーが適用されます。</p>
+<ul>
+  <li>国土地理院（msearch.gsi.go.jp / disaportaldata.gsi.go.jp / cyberjapandata.gsi.go.jp / cyberjapandata2.gsi.go.jp）— 住所のジオコーディング、標高、ハザードマップタイルの取得</li>
+  <li>防災科学技術研究所 J-SHIS（www.j-shis.bosai.go.jp）— 表層地盤・地震関連情報の取得</li>
+</ul>
+<p>これらは公的機関が提供する公開データサービスであり、本拡張はその応答を表示・キャッシュするのみです。</p>
+
+<h2>3. 課金（Pro）について</h2>
+<p>Pro 機能の決済は <a href="https://extensionpay.com/" target="_blank" rel="noopener">ExtensionPay（ExtPay）</a> および決済代行（Stripe）を通じて行われます。クレジットカード情報等の決済情報は決済事業者が直接取り扱い、<strong>本拡張および開発者がカード情報を取得・保存することはありません</strong>。購入状態の確認のため、extensionpay.com と通信します。</p>
+
+<h2>4. 権限の利用目的</h2>
+<ul>
+  <li><strong>storage / unlimitedStorage</strong> — 判定結果・メモ・設定を端末内に保存・キャッシュするため</li>
+  <li><strong>ホスト権限（gsi.go.jp / bosai.go.jp / extensionpay.com）</strong> — ハザードデータの取得と購入状態の確認のため</li>
+  <li><strong>suumo.jp でのコンテンツ表示</strong> — 物件ページにバッジを表示するため</li>
+</ul>
+
+<h2>5. 第三者提供・解析</h2>
+<p>本拡張は、アクセス解析・広告・トラッキングの仕組みを<strong>使用しません</strong>。取得した情報を第三者へ販売・提供することはありません。</p>
+
+<h2>6. データの削除</h2>
+<p>端末内のデータは、Chrome の拡張機能管理画面から本拡張を削除することで、あわせて消去されます。</p>
+
+<h2>7. 免責</h2>
+<p>本拡張は公的機関の公開データを参照する非公式ツールであり、判定結果は地点の代表値に基づく参考情報です。正確性・最新性を保証するものではなく、重要な判断の際は必ず原典資料をご確認ください。</p>
+
+<h2>8. 改定</h2>
+<p>本ポリシーは予告なく改定される場合があります。重要な変更がある場合は本ページで告知します。</p>
+
+<h2>9. お問い合わせ</h2>
+<p>本拡張・本ポリシーに関するお問い合わせ先: <a href="mailto:contact@miyagadget.page">contact@miyagadget.page</a></p>
+
+<footer>
+  SUUMO ハザードチェッカー は不動産情報サイトおよび各データ提供機関とは関係のない非公式の個人開発ツールです。「SUUMO」は株式会社リクルートの登録商標です。
+</footer>
+</div>
+</body>
+</html>
