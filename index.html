@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ハザードチェッカー — 物件の住所、その場で災害リスクを</title>
+<meta name="description" content="不動産情報サイトの物件ページで、住所のハザードマップ該当状況・地盤・標高・液状化リスクを公開データで自動バッジ表示するChrome拡張機能（非公式）。基本無料、詳細はPro（¥500 買い切り）。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f3efe6;
+    --paper-2:#ece6d8;
+    --ink:#16242f;
+    --ink-soft:#46545e;
+    --line:#c9c0ad;
+    --flood:#2f6fb0;
+    --alert:#cf3b30;
+    --amber:#d9871f;
+    --safe:#2e8466;
+    --accent:#1d4e6b;
+    --radius:14px;
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Zen Kaku Gothic New",system-ui,sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* 等高線テクスチャ背景 */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+    background-image:
+      radial-gradient(120% 90% at 80% -10%, rgba(47,111,176,.10), transparent 60%),
+      radial-gradient(90% 80% at -10% 110%, rgba(46,132,102,.08), transparent 55%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cg fill='none' stroke='%2316242f' stroke-opacity='0.06' stroke-width='1.2'%3E%3Cpath d='M-20 120 C80 60 160 180 260 120 S420 40 460 130'/%3E%3Cpath d='M-20 160 C80 100 160 220 260 160 S420 80 460 170'/%3E%3Cpath d='M-20 210 C90 150 170 270 270 210 S430 130 470 220'/%3E%3Cpath d='M-20 270 C90 210 180 330 280 270 S440 190 480 280'/%3E%3Cpath d='M-20 330 C100 270 190 390 290 330 S450 250 490 340'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px;position:relative;z-index:1}
+
+  /* ---- nav ---- */
+  header.nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);
+    background:rgba(243,239,230,.82);border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:.02em}
+  .brand .glyph{width:30px;height:30px;border:1.5px solid var(--ink);border-radius:8px;display:grid;place-items:center;
+    font-size:16px;background:var(--paper)}
+  .nav-links{display:flex;gap:26px;font-size:14px;font-weight:500}
+  .nav-links a{color:var(--ink-soft);text-decoration:none;position:relative}
+  .nav-links a:hover{color:var(--ink)}
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:-4px;width:0;height:2px;background:var(--accent);transition:width .25s}
+  .nav-links a:hover::after{width:100%}
+  @media(max-width:680px){.nav-links{display:none}}
+
+  /* ---- hero ---- */
+  .hero{padding:88px 0 64px;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  @media(max-width:860px){.hero{grid-template-columns:1fr;padding:56px 0 40px}}
+  .eyebrow{font-family:"DM Mono",monospace;font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);display:inline-flex;align-items:center;gap:8px;margin-bottom:18px}
+  .eyebrow::before{content:"";width:26px;height:1.5px;background:var(--accent)}
+  h1{font-family:"Shippori Mincho B1",serif;font-weight:800;font-size:clamp(34px,5.4vw,58px);
+    line-height:1.18;letter-spacing:.01em;margin-bottom:20px}
+  h1 .mark{color:var(--flood);position:relative;white-space:nowrap}
+  h1 .mark::after{content:"";position:absolute;left:0;right:0;bottom:.08em;height:.16em;background:rgba(47,111,176,.22)}
+  .lede{font-size:clamp(15px,1.7vw,17.5px);color:var(--ink-soft);max-width:30em;margin-bottom:30px}
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:9px;font:inherit;font-weight:700;font-size:15px;
+    padding:13px 22px;border-radius:10px;border:1.5px solid var(--ink);cursor:pointer;text-decoration:none;
+    transition:transform .15s, box-shadow .15s, background .15s}
+  .btn-primary{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 rgba(22,36,47,.18)}
+  .btn-primary:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 rgba(22,36,47,.22)}
+  .btn-ghost{background:transparent;color:var(--ink)}
+  .btn-ghost:hover{background:var(--paper-2)}
+  .hero-note{margin-top:18px;font-family:"DM Mono",monospace;font-size:11.5px;color:var(--ink-soft);letter-spacing:.03em}
+
+  /* ---- mock badge card ---- */
+  .mock-stage{position:relative}
+  .mock-pin{position:absolute;top:-26px;left:24px;font-family:"DM Mono",monospace;font-size:11px;
+    color:var(--ink-soft);background:var(--paper);border:1px dashed var(--line);padding:4px 9px;border-radius:20px}
+  .card{background:#f9f7f1;border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px;
+    box-shadow:14px 18px 40px rgba(22,36,47,.13);position:relative}
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .card-title{font-weight:700;font-size:15px;display:flex;align-items:center;gap:7px}
+  .pill-pro{font-family:"DM Mono",monospace;font-size:10.5px;letter-spacing:.06em;color:#fff;background:var(--accent);
+    padding:3px 8px;border-radius:20px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px}
+  .row{display:flex;align-items:center;gap:8px;font-size:13.5px}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;background:#b6bcb4}
+  .row.hit .dot{background:var(--alert)} .row.hit{color:var(--alert);font-weight:700}
+  .row.warn .dot{background:var(--amber)}
+  .row.safe{color:var(--ink-soft)}
+  .row.lock{color:#9aa29b}
+  .row.lock .lk{margin-left:auto;font-size:11px}
+  .blur{filter:blur(4.5px);user-select:none}
+  .meta{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);
+    font-size:12.5px;color:var(--ink-soft);font-family:"DM Mono",monospace}
+  .chip-low{background:#d2ecd9;color:#1b5e20;padding:1px 7px;border-radius:20px;font-size:11px}
+
+  /* ---- sections ---- */
+  section{padding:64px 0;position:relative}
+  .sec-label{font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:12px}
+  h2{font-family:"Shippori Mincho B1",serif;font-weight:700;font-size:clamp(26px,3.4vw,38px);line-height:1.3;margin-bottom:14px}
+  .sec-intro{color:var(--ink-soft);max-width:38em;margin-bottom:36px}
+
+  .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
+  .feat{background:#f9f7f1;border:1px solid var(--line);border-radius:var(--radius);padding:22px;
+    transition:transform .2s, box-shadow .2s}
+  .feat:hover{transform:translateY(-4px);box-shadow:0 16px 30px rgba(22,36,47,.10)}
+  .feat .ic{font-size:24px;margin-bottom:12px}
+  .feat h3{font-size:16px;font-weight:700;margin-bottom:6px}
+  .feat p{font-size:14px;color:var(--ink-soft)}
+
+  /* ---- pricing ---- */
+  .price-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:760px){.price-grid{grid-template-columns:1fr}}
+  .plan{background:#f9f7f1;border:1px solid var(--line);border-radius:18px;padding:28px}
+  .plan.pro{border:1.5px solid var(--ink);box-shadow:8px 10px 0 rgba(29,78,107,.14);position:relative;overflow:hidden}
+  .plan.pro::before{content:"おすすめ";position:absolute;top:16px;right:-34px;transform:rotate(45deg);
+    background:var(--accent);color:#fff;font-family:"DM Mono",monospace;font-size:11px;padding:4px 40px;letter-spacing:.1em}
+  .plan h3{font-family:"Shippori Mincho B1",serif;font-size:22px;margin-bottom:6px}
+  .price{font-family:"DM Mono",monospace;font-weight:500;margin:8px 0 4px}
+  .price .amt{font-size:42px;color:var(--ink)}
+  .price .unit{font-size:14px;color:var(--ink-soft)}
+  .plan ul{list-style:none;margin:18px 0 0}
+  .plan li{display:flex;gap:9px;font-size:14px;padding:6px 0;color:var(--ink)}
+  .plan li::before{content:"›";color:var(--accent);font-weight:700}
+  .plan li.muted{color:var(--ink-soft)}
+  .trial-note{margin-top:16px;font-size:12.5px;color:var(--ink-soft);font-family:"DM Mono",monospace}
+  .pay-note{margin-top:26px;font-size:13px;color:var(--ink-soft);text-align:center}
+
+  /* ---- policy / generic prose ---- */
+  .prose{background:#f9f7f1;border:1px solid var(--line);border-radius:var(--radius);padding:30px 34px}
+  .prose h3{font-size:16px;font-weight:700;margin:22px 0 6px;color:var(--ink)}
+  .prose h3:first-child{margin-top:0}
+  .prose p,.prose li{font-size:14px;color:var(--ink-soft)}
+  .prose ul{margin:4px 0 0 18px}
+  .prose li{padding:3px 0}
+  .prose .upd{font-family:"DM Mono",monospace;font-size:12px;color:var(--ink-soft);margin-top:18px}
+  .callout{border-left:3px solid var(--amber);background:rgba(217,135,31,.07);padding:12px 16px;border-radius:0 10px 10px 0;
+    font-size:13.5px;color:var(--ink-soft);margin-top:8px}
+
+  .contact a{color:var(--accent);font-weight:700;text-decoration:none;border-bottom:1.5px solid rgba(29,78,107,.3)}
+  .src-line{font-family:"DM Mono",monospace;font-size:12px;color:var(--ink-soft);margin-top:14px}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 50px;margin-top:30px}
+  footer .f-in{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:center;
+    font-size:12.5px;color:var(--ink-soft)}
+  footer .tm{max-width:40em}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  .hero .reveal{transition-delay:var(--d,0s)}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <div class="brand"><span class="glyph">🗺</span>ハザードチェッカー</div>
+    <nav class="nav-links">
+      <a href="#features">特徴</a>
+      <a href="#pricing">料金</a>
+      <a href="#privacy">プライバシー</a>
+      <a href="#contact">お問い合わせ</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- HERO -->
+  <section class="hero" style="padding-top:64px">
+    <div>
+      <span class="eyebrow reveal" style="--d:.0s">Chrome 拡張機能 / 非公式</span>
+      <h1 class="reveal" style="--d:.08s">物件の住所、<br>その場で<span class="mark">災害リスク</span>を。</h1>
+      <p class="lede reveal" style="--d:.16s">不動産情報サイトの物件ページを開くだけ。洪水・土砂・津波・地盤・液状化リスクを、国の公開データで自動バッジ表示。引っ越し先・購入物件の「足元の安全」を、内見前に確かめられます。</p>
+      <div class="cta-row reveal" style="--d:.24s">
+        <a class="btn btn-primary" href="#pricing">料金を見る →</a>
+        <a class="btn btn-ghost" href="#features">できること</a>
+      </div>
+      <p class="hero-note reveal" style="--d:.32s">出典：国土地理院・防災科学技術研究所 J-SHIS ／ バックエンド無し・処理は端末内</p>
+    </div>
+
+    <div class="mock-stage reveal" style="--d:.2s">
+      <span class="mock-pin">◎ 東京都〇〇区△△ 1-2-3</span>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">🗺 ハザード判定</span>
+          <span class="pill-pro">PRO 詳細 ↗</span>
+        </div>
+        <div class="grid2">
+          <span class="row hit"><span class="dot"></span>🌊 洪水 該当</span>
+          <span class="row lock"><span class="dot"></span>💧 内水 <span class="lk">🔒</span></span>
+          <span class="row safe"><span class="dot"></span>⛰ 土砂 区域外</span>
+          <span class="row lock"><span class="dot"></span>🌀 高潮 <span class="lk">🔒</span></span>
+          <span class="row safe"><span class="dot"></span>🌊 津波 区域外</span>
+          <span class="row lock"><span class="dot"></span>⚡ 活断層 <span class="lk">🔒</span></span>
+        </div>
+        <div class="meta">
+          <span>📏 12.3m</span>
+          <span>🌍 後背湿地</span>
+          <span>🪨 液状化(推定) <span class="chip-low">低</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="sec-label reveal">What it does</div>
+    <h2 class="reveal">基本のハザード判定は、無料で。</h2>
+    <p class="sec-intro reveal">命に関わる主要リスクの「該当／区域外」と、地盤まわりの情報は誰でも無料。物件一覧でも詳細でも、住所を見つけてその場でバッジを描画します。</p>
+    <div class="feat-grid">
+      <div class="feat reveal"><div class="ic">🌊</div><h3>主要ハザード判定</h3><p>洪水・土砂・津波が該当区域かをその場で表示。色や数字に頼らず一目で把握できます。</p></div>
+      <div class="feat reveal"><div class="ic">🌍</div><h3>標高・表層地盤・液状化</h3><p>海抜、微地形分類、液状化リスク（推定）まで無料で確認。足元の地盤を知る手がかりに。</p></div>
+      <div class="feat reveal"><div class="ic">⚡</div><h3>詳細データは Pro</h3><p>浸水深ランク・内水・高潮・浸水継続・家屋倒壊・活断層を解錠。比較やエクスポートも。</p></div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing">
+    <div class="sec-label reveal">Pricing</div>
+    <h2 class="reveal">無料で始めて、必要なら買い切りで。</h2>
+    <p class="sec-intro reveal">サブスクではありません。一度の支払いでずっと使える買い切りです。</p>
+    <div class="price-grid">
+      <div class="plan reveal">
+        <h3>無料</h3>
+        <div class="price"><span class="amt">¥0</span> <span class="unit">/ ずっと</span></div>
+        <ul>
+          <li>洪水・土砂・津波の該当／区域外</li>
+          <li>標高・表層地盤・液状化（推定）</li>
+          <li>重ねるハザードマップ等へのリンク</li>
+          <li class="muted">メモ・お気に入りは合計3件まで</li>
+        </ul>
+      </div>
+      <div class="plan pro reveal">
+        <h3>Pro</h3>
+        <div class="price"><span class="amt">¥500</span> <span class="unit">/ 買い切り（一度きり）</span></div>
+        <ul>
+          <li>浸水深ランク・内水・高潮</li>
+          <li>浸水継続時間・家屋倒壊等氾濫想定区域</li>
+          <li>活断層の近接判定</li>
+          <li>お気に入り比較ビュー・CSV / PDF 出力</li>
+          <li>メモ・お気に入り 無制限</li>
+        </ul>
+        <p class="trial-note">◎ 物件5件まで、Pro詳細を無料でお試しできます。</p>
+      </div>
+    </div>
+    <p class="pay-note">お支払いは拡張機能内から <strong>ExtensionPay（Stripe 決済）</strong> 経由で、クレジットカードにより一度きり。アカウント登録は不要です。</p>
+  </section>
+
+  <!-- SOURCES / DISCLAIMER -->
+  <section id="about">
+    <div class="sec-label reveal">Data &amp; disclaimer</div>
+    <h2 class="reveal">公開データに基づく、独立したツールです。</h2>
+    <div class="prose reveal">
+      <h3>データ出典</h3>
+      <p>ハザードデータ・地図タイル：国土地理院「ハザードマップポータルサイト（重ねるハザードマップ）」「活断層図（都市圏活断層図）」、標高：国土地理院、表層地盤（微地形分類）：防災科学技術研究所 J-SHIS。液状化(推定) は微地形分類から本拡張が推定したものです。</p>
+      <h3>免責事項</h3>
+      <p>判定は住所の代表点1点・公開タイルに基づく簡易判定であり、敷地全体や局所的な危険箇所からずれる場合があります。液状化(推定)は自治体公表の予測図とは異なることがあります。重要な判断は必ず<a href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener" style="color:var(--accent)">重ねるハザードマップ</a>等の原典でご確認ください。本拡張の利用により生じた損害について、開発者は責任を負いません。</p>
+      <div class="callout">本サービスは個人が開発・提供する非公式ツールです。特定の不動産情報サイト・行政機関・データ提供元とは提携していません。各社・各サービスの名称は各権利者の商標です。</div>
+    </div>
+  </section>
+
+  <!-- PRIVACY -->
+  <section id="privacy">
+    <div class="sec-label reveal">Privacy policy</div>
+    <h2 class="reveal">プライバシーポリシー</h2>
+    <div class="prose reveal">
+      <h3>取得・送信する情報</h3>
+      <ul>
+        <li>判定対象の<strong>物件住所</strong>：緯度経度へ変換（ジオコーディング）するため、国土地理院のアドレス検索APIへ送信します。</li>
+        <li>変換後の<strong>緯度経度</strong>：ハザード・標高・地盤の判定のため、国土地理院および防災科学技術研究所 J-SHIS のサーバーへ送信します。</li>
+      </ul>
+      <h3>保存する情報</h3>
+      <p>判定結果・タイルや地点データのキャッシュ・メモ・お気に入り・設定は、すべて<strong>お使いのブラウザ内（chrome.storage.local）にのみ</strong>保存されます。開発者のサーバーへ送信・蓄積することはありません。</p>
+      <h3>第三者提供・トラッキング</h3>
+      <ul>
+        <li>上記の公開データ提供元（国土地理院・J-SHIS）以外へ、住所や位置情報を提供することはありません。</li>
+        <li>独自のアクセス解析・広告・トラッキングCookieは使用しません。</li>
+        <li>Pro 購入時のみ、決済処理のため <strong>ExtensionPay / Stripe</strong> がメールアドレス・カード情報を取り扱います（各社のプライバシーポリシーに従います）。開発者はカード情報を保持しません。</li>
+      </ul>
+      <h3>権限</h3>
+      <p>拡張機能はデータ保存（storage）と、上記データ提供元・決済サービスのドメインへの通信のためにのみ権限を使用します。</p>
+      <h3>改定・お問い合わせ</h3>
+      <p>本ポリシーは必要に応じて改定し、本ページで告知します。ご不明点は下記の連絡先までお問い合わせください。</p>
+      <p class="upd">最終更新日：2026-05-29</p>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="sec-label reveal">Contact</div>
+    <h2 class="reveal">お問い合わせ</h2>
+    <div class="prose contact reveal">
+      <p>不具合のご報告・ご質問・返金等のご相談は、こちらまでお願いします。</p>
+      <p style="margin-top:8px;font-size:16px"><">REPLACE_WITH_SUPPORT_EMAIL</a></p>
+      <p class="src-line">運営：個人開発者（ハザードチェッカー）</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap f-in">
+    <span>© 2026 ハザードチェッカー</span>
+    <span class="tm">「SUUMO」をはじめ各不動産情報サイト・サービスの名称は各権利者の商標です。本拡張は非公式の独立したツールです。出典：国土地理院／防災科研 J-SHIS。</span>
+  </div>
+</footer>
+
+<script>
+  // staggered hero on load
+  requestAnimationFrame(()=>document.querySelectorAll('.hero .reveal').forEach(el=>el.classList.add('in')));
+  // scroll reveal for the rest
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.14});
+  document.querySelectorAll('section:not(.hero) .reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>
