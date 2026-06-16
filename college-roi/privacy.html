@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Privacy Policy — College ROI Overlay</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 760px; margin: 40px auto; padding: 0 20px; color: #1a2b24; }
+  h1 { font-size: 26px; } h2 { font-size: 19px; margin-top: 28px; }
+  code { background: #eef3f0; padding: 1px 5px; border-radius: 4px; }
+  .muted { color: #6b7c75; font-size: 14px; }
+  ul { padding-left: 22px; }
+</style>
+</head>
+<body>
+  <h1>Privacy Policy — College ROI Overlay</h1>
+  <p class="muted">Last updated: June 16, 2026</p>
+
+  <p>College ROI Overlay (the “Extension”) is a Chrome browser extension that displays
+  objective U.S. government college statistics (U.S. Department of Education College
+  Scorecard / IPEDS) as inline badges on supported college search/application sites
+  (Common App, Niche, BigFuture). This policy explains what data the Extension does and
+  does not handle.</p>
+
+  <h2>1. Single purpose</h2>
+  <p>The Extension has a single purpose: to overlay public government college data as
+  reference badges on supported U.S. college pages. It has no other functionality.</p>
+
+  <h2>2. We do not collect personal data</h2>
+  <ul>
+    <li>The Extension does <strong>not</strong> collect, transmit, or sell any personally
+      identifiable information.</li>
+    <li>It does <strong>not</strong> track your browsing history.</li>
+    <li>From a supported page it reads only the <strong>college name / school identifier</strong>
+      in order to match it to a public school record. No user identity is sent.</li>
+  </ul>
+
+  <h2>3. Data stored on your device</h2>
+  <p>The following is stored locally via <code>chrome.storage.local</code> on your device only,
+  and is never sold or transferred to third parties:</p>
+  <ul>
+    <li>Display settings.</li>
+    <li>Your comparison list (school IDs you chose to compare).</li>
+    <li>An optional College Scorecard API key, if you choose to provide your own (the
+      default configuration uses a first-party proxy and requires no key). The key is
+      never logged.</li>
+    <li>Your purchase status (Season Pass) as reported by the payment provider.</li>
+  </ul>
+
+  <h2>4. Network connections (least privilege)</h2>
+  <p>The Extension connects only to:</p>
+  <ul>
+    <li><code>api.data.gov</code> (College Scorecard) — or a first-party proxy that forwards
+      requests to it — to retrieve public school statistics, queried by school ID only.</li>
+    <li><code>extensionpay.com</code> — to manage the optional one-time purchase (handled by
+      ExtensionPay/Stripe; the Extension never receives your card details).</li>
+  </ul>
+  <p>It connects to no other servers and does not execute remote code.</p>
+
+  <h2>5. Limited Use disclosure</h2>
+  <p>This Extension’s use of information received from web pages adheres to the
+  <a href="https://developer.chrome.com/docs/webstore/program-policies/limited-use/">Chrome Web Store User Data Policy</a>,
+  including the Limited Use requirements. We do not collect personal data, do not sell user
+  data, and use on-device storage only for settings, comparison lists, an optional API key,
+  and purchase status. College statistics are retrieved from the U.S. Department of Education
+  College Scorecard.</p>
+
+  <h2>6. Disclaimers</h2>
+  <p>Reference info only — not financial or admissions advice. Field-of-study earnings/debt
+  figures cover federal (Title IV) aid recipients only and may not represent all graduates.
+  Data source: U.S. Dept. of Education College Scorecard / IPEDS. This Extension is unofficial
+  and is not affiliated with Common App, Niche, College Board, or the U.S. Department of
+  Education.</p>
+
+  <h2>7. Contact</h2>
+  <p>Questions about this policy: <a href="mailto:ryuta367@gmail.com">ryuta367@gmail.com</a></p>
+</body>
+</html>
